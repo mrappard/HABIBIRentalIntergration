@@ -33,6 +33,5 @@ winston.stream({ start: -1 }).on('error', function(log) {
 });
 
 module.exports = {
-	secret : 'e72257a03bb6fd583bc7e28dacg1c01b211417805126e836ec2631d1a56d3422',
 	logger,
 };

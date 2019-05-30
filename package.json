@@ -14,14 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://EmilKais@bitbucket.org/threelefts/habibi.git"
+    "url": "git+https://github.com/mrappard/HABIBIRentalIntergration.git"
   },
   "author": "Emil Kais",
   "license": "ISC",
   "bugs": {
-    "url": "https://EmilKais@bitbucket.org/threelefts/habibi/issues"
+    "url": "https://github.com/mrappard/HABIBIRentalIntergration/issues"
   },
-  "homepage": "https://EmilKais@bitbucket.org/threelefts/habibi#readme",
+  "homepage": "https://github.com/mrappard/HABIBIRentalIntergration#readme",
   "dependencies": {
     "@cloudant/cloudant": "^3.0.1",
     "agentkeepalive": "^4.0.0",
