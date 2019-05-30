@@ -1,0 +1,69 @@
+{
+  "name": "habibi",
+  "version": "1.0.0",
+  "description": "to get consignment allocation for items",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "build": "webpack --mode production",
+    "dev-build": "webpack --mode development -w"
+  },
+  "engines": {
+    "node": "^10.15.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://EmilKais@bitbucket.org/threelefts/habibi.git"
+  },
+  "author": "Emil Kais",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://EmilKais@bitbucket.org/threelefts/habibi/issues"
+  },
+  "homepage": "https://EmilKais@bitbucket.org/threelefts/habibi#readme",
+  "dependencies": {
+    "@cloudant/cloudant": "^3.0.1",
+    "agentkeepalive": "^4.0.0",
+    "axios": "^0.18.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "bcryptjs": "^2.4.3",
+    "bluebird": "^3.5.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "compression": "^1.7.3",
+    "cors": "^2.8.5",
+    "ejs": "^2.5.7",
+    "express": "^4.16.3",
+    "express-graphql": "^0.7.1",
+    "graphql": "^14.0.2",
+    "graphql-depth-limit": "^1.1.0",
+    "graphql-request": "^1.8.2",
+    "helmet": "^3.15.0",
+    "merge-graphql-schemas": "^1.5.8",
+    "morgan": "^1.9.1",
+    "nano": "^8.0.0",
+    "react": "^16.7.0",
+    "react-apollo": "^2.3.3",
+    "react-csv": "^1.1.1",
+    "react-csv-reader": "^1.2.2",
+    "react-dom": "^16.7.0",
+    "react-month-picker": "^1.3.9",
+    "react-router-dom": "^4.2.2",
+    "winston": "^2.4.2"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "eslint": "^5.11.1",
+    "eslint-plugin-react": "^7.11.1",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.0.7",
+    "webpack": "^4.28.2",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.14"
+  }
+}
