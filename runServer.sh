@@ -1,2 +1,2 @@
 #!/bin/bash
-killall node || true && node ./Desktop/HABIBIRentalIntergration/index.js && npm run-script build
+killall node || true && cd `dirname "$0"` && npm run-script build && node index.js
