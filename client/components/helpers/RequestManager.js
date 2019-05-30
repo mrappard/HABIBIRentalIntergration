@@ -1,9 +1,10 @@
 import { request } from 'graphql-request';
 import axios from 'axios';
+import config from '../../../config';
 
 const server_url = "http://localhost:3000/graphql";
 
-const apikey = 'xTdvsK86Wj5YaPTYNXzX';
+const apikey = config.apikey;
 const subdomain = 'habibi';
 const apiUrl ='https://api.current-rms.com/api/v1/';
 

@@ -33,5 +33,5 @@ winston.stream({ start: -1 }).on('error', function(log) {
 });
 
 module.exports = {
-	logger,
+	logger
 };

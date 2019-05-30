@@ -154,7 +154,7 @@ eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n\tvalue: true\n});\n
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-eval("\n\nvar _graphqlRequest = __webpack_require__(/*! graphql-request */ \"./node_modules/graphql-request/dist/src/index.js\");\n\nvar _axios = __webpack_require__(/*! axios */ \"./node_modules/axios/index.js\");\n\nvar _axios2 = _interopRequireDefault(_axios);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar server_url = \"http://localhost:3000/graphql\";\n\nvar apikey = 'xTdvsK86Wj5YaPTYNXzX';\nvar subdomain = 'habibi';\nvar apiUrl = 'https://api.current-rms.com/api/v1/';\n\nexports.getInvoices = function (year, month) {\n    var aPromise = new Promise(function (resolve, reject) {\n        _axios2.default.get(apiUrl + '/invoices?apikey=' + apikey + '&subdomain=' + subdomain + '&filtermode=inactive&status_name=Paid&include[]=invoice_items&include[]=destination&q[invoiced_at_gt]=' + year + '-' + month + '-01&q[invoiced_at_lteq]=' + year + '-' + month + '-' + new Date(year, month, 0).getDate()).then(function (data) {\n            resolve(data);\n        }).catch(function (err) {\n            reject(err);\n        });\n    });\n    return aPromise;\n};\n\nexports.getConsignments = function () {\n    var aPromise = new Promise(function (resolve, reject) {\n        _axios2.default.get(apiUrl + '/list_names/1000001?apikey=' + apikey + '&subdomain=' + subdomain).then(function (data) {\n            resolve(data);\n        }).catch(function (err) {\n            reject(err);\n        });\n    });\n    return aPromise;\n};\n\nexports.getSpecificConsignments = function (id) {\n    var aPromise = new Promise(function (resolve, reject) {\n        _axios2.default.get(apiUrl + '/products/' + id + '/stock_levels?apikey=' + apikey + '&subdomain=' + subdomain).then(function (data) {\n            resolve(data);\n        }).catch(function (err) {\n            reject(err);\n        });\n    });\n    return aPromise;\n};\n\n//# sourceURL=webpack:///./client/components/helpers/RequestManager.js?");
+eval("\n\nvar _graphqlRequest = __webpack_require__(/*! graphql-request */ \"./node_modules/graphql-request/dist/src/index.js\");\n\nvar _axios = __webpack_require__(/*! axios */ \"./node_modules/axios/index.js\");\n\nvar _axios2 = _interopRequireDefault(_axios);\n\nvar _config = __webpack_require__(/*! ../../../config */ \"./config.js\");\n\nvar _config2 = _interopRequireDefault(_config);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar server_url = \"http://localhost:3000/graphql\";\n\nvar apikey = _config2.default.apikey;\nvar subdomain = 'habibi';\nvar apiUrl = 'https://api.current-rms.com/api/v1/';\n\nexports.getInvoices = function (year, month) {\n    var aPromise = new Promise(function (resolve, reject) {\n        _axios2.default.get(apiUrl + '/invoices?apikey=' + apikey + '&subdomain=' + subdomain + '&filtermode=inactive&status_name=Paid&include[]=invoice_items&include[]=destination&q[invoiced_at_gt]=' + year + '-' + month + '-01&q[invoiced_at_lteq]=' + year + '-' + month + '-' + new Date(year, month, 0).getDate()).then(function (data) {\n            resolve(data);\n        }).catch(function (err) {\n            reject(err);\n        });\n    });\n    return aPromise;\n};\n\nexports.getConsignments = function () {\n    var aPromise = new Promise(function (resolve, reject) {\n        _axios2.default.get(apiUrl + '/list_names/1000001?apikey=' + apikey + '&subdomain=' + subdomain).then(function (data) {\n            resolve(data);\n        }).catch(function (err) {\n            reject(err);\n        });\n    });\n    return aPromise;\n};\n\nexports.getSpecificConsignments = function (id) {\n    var aPromise = new Promise(function (resolve, reject) {\n        _axios2.default.get(apiUrl + '/products/' + id + '/stock_levels?apikey=' + apikey + '&subdomain=' + subdomain).then(function (data) {\n            resolve(data);\n        }).catch(function (err) {\n            reject(err);\n        });\n    });\n    return aPromise;\n};\n\n//# sourceURL=webpack:///./client/components/helpers/RequestManager.js?");
 
 /***/ }),
 
@@ -203,6 +203,18 @@ eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n\tvalue: true\n});\n
 
 "use strict";
 eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n\tvalue: true\n});\nexports.Success = exports.Error = undefined;\n\nvar _Error = __webpack_require__(/*! ./Error */ \"./client/components/presentation/Error.js\");\n\nvar _Error2 = _interopRequireDefault(_Error);\n\nvar _Success = __webpack_require__(/*! ./Success */ \"./client/components/presentation/Success.js\");\n\nvar _Success2 = _interopRequireDefault(_Success);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nexports.Error = _Error2.default;\nexports.Success = _Success2.default;\n\n//# sourceURL=webpack:///./client/components/presentation/index.js?");
+
+/***/ }),
+
+/***/ "./config.js":
+/*!*******************!*\
+  !*** ./config.js ***!
+  \*******************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nmodule.exports = {\n    apikey: 'xTdvsK86Wj5YaPTYNXzX'\n};\n\n//# sourceURL=webpack:///./config.js?");
 
 /***/ }),
 
