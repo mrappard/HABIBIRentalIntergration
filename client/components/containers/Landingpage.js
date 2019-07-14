@@ -26,7 +26,10 @@ class Landingpage extends Component {
 			endDate: '',
 			csvTitle: ['Invoice period', 'Invoice date', 'Production Company','Job Name', 'Item Name & Quantity','Location', 'Invoice Number', 'Total', 'Your Total', 'Habibi Total'],
 			csvs: '',
-			setup: ''
+			setup: '',
+			localConsignments: {},
+			loadingInfo: '',
+			consignmentInfo: ''
 		};
 	}
 
@@ -69,6 +72,9 @@ class Landingpage extends Component {
 			let elem = this.state.consignments[i];
 		}
 		let pricesToAdd = {};
+		this.setState({
+			loadingInfo: 'Waiting to get all invoice Information... Please Be Patient!'
+		});
 		RequestManager.getInvoices(year, month)
 			.then((res) => {
 				let invoices = res.data.invoices;
@@ -88,10 +94,12 @@ class Landingpage extends Component {
 								let obj = {};
 								if(items[k].charge_total > 0) {
 									if(items[k].invoice_item_type_name !== 'Group') {
-										if(items[k].invoiceable && items[k].invoiceable.item_id !== null)
+										if(items[k].invoiceable && items[k].invoiceable.item_id) {
 											obj.invoiceable_id = items[k].invoiceable.item_id;
-										else
+											obj.item_id = items[k].invoiceable.item_id;
+										} else {
 											obj.invoiceable_id = items[k].invoiceable_id;
+										}
 										obj.charge_total = items[k].charge_total;
 										obj.id = items[k].id;
 										obj.name = items[k].name;
@@ -111,7 +119,8 @@ class Landingpage extends Component {
 					}
 					this.setState({
 						prices: pricesToAdd,
-						setup: ''
+						setup: '',
+						loadingInfo: ''
 					});
 				}
 			})
@@ -121,31 +130,43 @@ class Landingpage extends Component {
 	}
 
 	async pullConsignmentInformation() {
+		this.setState({
+			consignmentInfo: 'Waiting to pull the proper information from current-rms api. Should take < 1 minute!'
+		});
 		if(this.state.prices) {
 			let prices = this.state.prices;
+			let localConsignments = this.state.localConsignments;
 			let keys = Object.keys(this.state.prices);
 			let consignments =[];
 			for(let i =0; i< keys.length; i++) {
 				let obj = {};
 				try {
-					let res = await RequestManager.getSpecificConsignments(this.state.prices[keys[i]].invoiceable_id);
-					let consignmentList = res.data.stock_levels;
-					if(consignmentList.length > 0) {
-						for(let p=0; p<consignmentList.length; p++) {
-							if(consignmentList[p].custom_fields.consignment_allocation_asset){
-								prices[keys[i]].consignment_allocation_asset = consignmentList[p].custom_fields.consignment_allocation_asset;
-								break;
-							}
-						}
+					//local cache of consignments already there
+					//key: invoiceable_id, value: consignment_allocation_asset
+					if(localConsignments[this.state.prices[keys[i]].name]) {
+						console.log('used cache');
+						prices[keys[i]].consignment_allocation_asset = localConsignments[this.state.prices[keys[i]].name];
 					} else {
-						console.log(this.state.prices[keys[i]]);
-						console.log(res.data);
-						console.log('hit2');
-						//prices[keys[i]].consignment_allocation_asset = [1000021];
+						let res = await RequestManager.getSpecificConsignments(this.state.prices[keys[i]].invoiceable_id);
+						let consignmentList = res.data.stock_levels;
+						if(consignmentList.length > 0) {
+							for(let p=0; p<consignmentList.length; p++) {
+								if(consignmentList[p].custom_fields.consignment_allocation_asset !== null){
+									prices[keys[i]].consignment_allocation_asset = consignmentList[p].custom_fields.consignment_allocation_asset;
+									localConsignments[this.state.prices[keys[i]].name] = consignmentList[p].custom_fields.consignment_allocation_asset;
+									break;
+								}
+							}
+						} else {
+							console.log(this.state.prices[keys[i]]);
+							console.log(res.data);
+						}
+						if(!prices[keys[i]].consignment_allocation_asset) {
+							prices[keys[i]].consignment_allocation_asset = [1000021];
+							localConsignments[this.state.prices[keys[i]].name] = [1000021];
+							prices[keys[i]].not_found = 'Used default value: Check to see if you have this in current-rms and has a Consignment Allocation (Asset) value.'
+						}					
 					}
-					await setTimeout(() => {
-
-					}, 350);
 				} catch (err) {
 					console.log(err);
 				}
@@ -155,7 +176,8 @@ class Landingpage extends Component {
 				convertSuccess: 'Pulled consignment information',
 				error: '',
 				generateSuccess: '',
-				setup: ''
+				setup: '',
+				consignmentInfo: ''
 			});
 		} else {
 			this.setState({
@@ -170,96 +192,94 @@ class Landingpage extends Component {
 		let parts = Object.keys(prices);
 		let consignmentData = this.state.consignmentData;
 
-		for(let i=0; i< parts.length; i++) {
-			if(!prices[parts[i]].consignment_allocation_asset)
-				console.log(prices[parts[i]].name);
+		for(let i =0; i< parts.length; i++) {
+			let lines = [];
+			let consignment_assets = prices[parts[i]].consignment_allocation_asset;
+			for(let p =0; p< consignment_assets.length; p++) {
+				let tempObj;
+				for(let k=0; k<consignmentData.length; k++) {
+					if(consignmentData[k].id === consignment_assets[p]) {
+						let data = this.stringNumSplit(consignmentData[k].name);
+						//format should be: id, companyName, percentage
+						let smallerLine = [];
+						//if its a purchase, the part will not have charge_starts_at value filled in
+						//invoice, invoiceDate, production, location, invoiceId, total, split
+						if(prices[parts[i]].charge_starts_at) {
+							smallerLine.push(prices[parts[i]].charge_starts_at.slice(0,10) + ' to ' + prices[parts[i]].charge_ends_at.slice(0,10));
+						} else {
+							smallerLine.push('Purchased at ' + prices[parts[i]].invoice_date.slice(0,10));
+						}
+						smallerLine.push(prices[parts[i]].invoice_date.slice(0, 10));
+						smallerLine.push(data.company);
+						smallerLine.push(prices[parts[i]].subject);
+						smallerLine.push(prices[parts[i]].invoiceable_name);
+						smallerLine.push(prices[parts[i]].location);
+						smallerLine.push(prices[parts[i]].invoice_id);
+						smallerLine.push(parseFloat(prices[parts[i]].charge_total));
+						smallerLine.push(prices[parts[i]].charge_total * data.number/100);
+						smallerLine.push(prices[parts[i]].charge_total - prices[parts[i]].charge_total * data.number/100);
+						smallerLine.push(data.company);
+						if(prices[parts[i]].not_found)
+							smallerLine.push('WARNING: ' + prices[parts[i]].not_found);
+
+						let innerObj = {};
+
+						if(finalRevenues[data.company]) {
+							innerObj = finalRevenues[data.company];
+						}
+						innerObj[prices[parts[i]].subject + '-' + prices[parts[i]].id] = smallerLine;
+						finalRevenues[data.company] = innerObj;
+						lines.push(smallerLine);
+					}
+				}
+			}
 		}
 
-		// for(let i =0; i< parts.length; i++) {
-		// 	let lines = [];
-		// 	let consignment_assets = prices[parts[i]].consignment_allocation_asset;
-		// 	for(let p =0; p< consignment_assets.length; p++) {
-		// 		let tempObj;
-		// 		for(let k=0; k<consignmentData.length; k++) {
-		// 			if(consignmentData[k].id === consignment_assets[p]) {
-		// 				let data = this.stringNumSplit(consignmentData[k].name);
-		// 				//format should be: id, companyName, percentage
-		// 				let smallerLine = [];
-		// 				//if its a purchase, the part will not have charge_starts_at value filled in
-		// 				//invoice, invoiceDate, production, location, invoiceId, total, split
-		// 				if(prices[parts[i]].charge_starts_at) {
-		// 					smallerLine.push(prices[parts[i]].charge_starts_at.slice(0,10) + ' to ' + prices[parts[i]].charge_ends_at.slice(0,10));
-		// 				} else {
-		// 					smallerLine.push('Purchased at ' + prices[parts[i]].invoice_date.slice(0,10));
-		// 				}
-		// 				smallerLine.push(prices[parts[i]].invoice_date.slice(0, 10));
-		// 				smallerLine.push(data.company);
-		// 				smallerLine.push(prices[parts[i]].subject);
-		// 				smallerLine.push(prices[parts[i]].invoiceable_name);
-		// 				smallerLine.push(prices[parts[i]].location);
-		// 				smallerLine.push(prices[parts[i]].invoice_id);
-		// 				smallerLine.push(parseFloat(prices[parts[i]].charge_total));
-		// 				smallerLine.push(prices[parts[i]].charge_total * data.number/100);
-		// 				smallerLine.push(prices[parts[i]].charge_total - prices[parts[i]].charge_total * data.number/100);
-		// 				smallerLine.push(data.company);
-		// 				let innerObj = {};
-
-		// 				if(finalRevenues[data.company]) {
-		// 					innerObj = finalRevenues[data.company];
-		// 				}
-		// 				innerObj[prices[parts[i]].subject + '-' + prices[parts[i]].id] = smallerLine;
-		// 				finalRevenues[data.company] = innerObj;
-		// 				lines.push(smallerLine);
-		// 			}
-		// 		}
-		// 	}
-		// }
-
-		// let keys = Object.keys(finalRevenues);
-		// let csvs = [];
+		let keys = Object.keys(finalRevenues);
+		let csvs = [];
 
 
-		// for(let i=0; i< keys.length; i++) {
-		// 	let companyValues = Object.values(finalRevenues[keys[i]]);
-		// 	//will include subtotals and spaces
-		// 	let newValues = [];
-		// 	let subTotal = 0;
-		// 	for(let p = 0; p < companyValues.length; p++) {
-		// 		if(p < companyValues.length -1 && companyValues[p][3] !== companyValues[p+1][3]) {
-		// 			subTotal += companyValues[p][8];
-		// 			newValues.push(companyValues[p]);
-		// 			newValues.push(['', '', '', '','', '','', 'Invoice Total:', subTotal, ''])
-		// 			newValues.push(['', '', '', '','', '','']);
-		// 			//reset subTotal
-		// 			subTotal = 0;
-		// 		} else if(p < companyValues.length -1 && companyValues[p][3] === companyValues[p+1][3]) {
-		// 			subTotal += companyValues[p][8];
-		// 			newValues.push(companyValues[p]);
-		// 		} else if(p === companyValues.length -1) {
-		// 			subTotal += companyValues[p][8];
-		// 			newValues.push(companyValues[p]);
-		// 			newValues.push(['', '', '', '','', '','', 'Invoice Total:', subTotal, ''])
-		// 			newValues.push(['', '', '', '','', '','']);
-		// 		}
-		// 	}
-		// 	let aLine = [this.state.csvTitle, ...newValues];
-		// 	csvs.push(aLine);
-		// }
+		for(let i=0; i< keys.length; i++) {
+			let companyValues = Object.values(finalRevenues[keys[i]]);
+			//will include subtotals and spaces
+			let newValues = [];
+			let subTotal = 0;
+			for(let p = 0; p < companyValues.length; p++) {
+				if(p < companyValues.length -1 && companyValues[p][3] !== companyValues[p+1][3]) {
+					subTotal += companyValues[p][8];
+					newValues.push(companyValues[p]);
+					newValues.push(['', '', '', '','', '','', 'Invoice Total:', subTotal, ''])
+					newValues.push(['', '', '', '','', '','']);
+					//reset subTotal
+					subTotal = 0;
+				} else if(p < companyValues.length -1 && companyValues[p][3] === companyValues[p+1][3]) {
+					subTotal += companyValues[p][8];
+					newValues.push(companyValues[p]);
+				} else if(p === companyValues.length -1) {
+					subTotal += companyValues[p][8];
+					newValues.push(companyValues[p]);
+					newValues.push(['', '', '', '','', '','', 'Invoice Total:', subTotal, ''])
+					newValues.push(['', '', '', '','', '','']);
+				}
+			}
+			let aLine = [this.state.csvTitle, ...newValues];
+			csvs.push(aLine);
+		}
 
-		// //calculating overall total
-		// for(let p =0; p<csvs.length; p++) {
-		// 	let total = 0;
-		// 	let split = 0;
-		// 	let subTotal = 0;
-		// 	for(let k=0; k< csvs[p].length; k++) {
-		// 		if(csvs[p][k].length === 11) {
-		// 			csvs[p][k].pop();
-		// 			total += csvs[p][k][7];
-		// 			split += csvs[p][k][8];
-		// 		}
-		// 	}
-		// 	csvs[p].push(['', '', '', '','', '','', 'total: ' +total, 'split: ' + split, 'Habibi Total: ' + (total - split)]);
-		// }
+		//calculating overall total
+		for(let p =0; p<csvs.length; p++) {
+			let total = 0;
+			let split = 0;
+			let subTotal = 0;
+			for(let k=0; k< csvs[p].length; k++) {
+				if(csvs[p][k].length === 11) {
+					csvs[p][k].pop();
+					total += csvs[p][k][7];
+					split += csvs[p][k][8];
+				}
+			}
+			csvs[p].push(['', '', '', '','', '','', 'total: ' +total, 'split: ' + split, 'Habibi Total: ' + (total - split)]);
+		}
 
 		this.setState({
 			finalRevenues,
@@ -298,6 +318,13 @@ class Landingpage extends Component {
 			year
 		};
 		this.setState({
+			prices: '',
+			finalRevenues: [],
+			consignmentObjects: [],
+			convertSuccess: '',
+			generateSuccess: '',
+			error: '',
+			csvs: '',
 			startDate,
 			endDate,
 			error: '',
@@ -352,6 +379,11 @@ class Landingpage extends Component {
 						</Picker>
 					</div>
 					{
+						this.state.loadingInfo ?
+							<Success message={this.state.loadingInfo} />
+						:	null
+					}
+					{
 						this.state.prices ? 
 							<button className="btn" onClick={(e)=>this.pullConsignmentInformation()}>Get Consignment info</button>
 						:	<button className="btn" disabled={true} onClick={(e)=>this.pullConsignmentInformation()}>Get Consignment info</button>
@@ -361,7 +393,11 @@ class Landingpage extends Component {
 							<Success message={this.state.convertSuccess}/>
 						:	null
 					}
-					<button className="btn btn-last" onClick={(e) => this.generateConsignmentReport()}>Consignment Report</button>
+					{
+						this.state.convertSuccess ? 
+							<button className="btn btn-last" onClick={(e) => this.generateConsignmentReport()}>Consignment Report</button>
+						:	<button className="btn btn-last" disabled={true} onClick={(e) => this.generateConsignmentReport()}>Consignment Report</button>
+					}
 					{
 						this.state.generateSuccess ?
 							<Success message={this.state.generateSuccess}/>
