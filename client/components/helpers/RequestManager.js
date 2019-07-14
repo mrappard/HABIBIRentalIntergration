@@ -10,7 +10,7 @@ const apiUrl ='https://api.current-rms.com/api/v1/';
 
 exports.getInvoices = function(year, month) {
     let aPromise = new Promise((resolve, reject) => {
-        axios.get(apiUrl + '/invoices?apikey=' + apikey + '&subdomain=' + subdomain + '&filtermode=inactive&status_name=Paid&include[]=invoice_items&include[]=destination&q[invoiced_at_gt]=' + year + '-' + month + '-01&q[invoiced_at_lteq]=' + year + '-' + month + '-' + new Date(year, month, 0).getDate())
+        axios.get(apiUrl + '/invoices?apikey=' + apikey + '&subdomain=' + subdomain + '&filtermode=inactive&include[]=invoice_items&include[]=destination&per_page=100&q[invoiced_at_gt]=' + year + '-' + month + '-01&q[invoiced_at_lteq]=' + year + '-' + month + '-' + new Date(year, month, 0).getDate())
             .then((data) => {
                 resolve(data);
             })
