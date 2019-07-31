@@ -5,6 +5,7 @@ import CSVReader from 'react-csv-reader';
 import { Error, Success } from '../presentation/';
 import Picker from 'react-month-picker'
 import { CSVLink, CSVDownload } from 'react-csv';
+import { timingSafeEqual } from 'crypto';
 
 class Landingpage extends Component {
 	constructor(props) {
@@ -14,7 +15,7 @@ class Landingpage extends Component {
 			object: '',
 			consignments: '',
 			//prices for invoices within a certain period
-			prices: '',
+			prices: {},
 			finalRevenues: [],
 			consignmentObjects: [],
 			consignmentData: [],
@@ -39,7 +40,7 @@ class Landingpage extends Component {
 				this.setState({
 					consignmentData: res.data.list_name.list_values,
 					setup: 'Pulled information from database'
-				});
+				})
 			})
 			.catch((err) => {
 				console.log(err);
@@ -71,7 +72,6 @@ class Landingpage extends Component {
 		for(let i =0; i < this.state.consignments.length; i++) {
 			let elem = this.state.consignments[i];
 		}
-		let pricesToAdd = {};
 		this.setState({
 			loadingInfo: 'Waiting to get all invoice Information... Please Be Patient!'
 		});
@@ -84,49 +84,88 @@ class Landingpage extends Component {
 					});
 				}
 				else {
+
+					let opportunity_id = 0;
+
 					for(let p = 0; p < invoices.length; p++) {
 						//to make sure this does not include voided status
 						if(invoices[p].status_name !== 'Voided') {
 							let items = invoices[p].invoice_items;
+							
 							let subject = invoices[p].subject;
 							let location = invoices[p].destination.address.city;
-							for(let k=0; k < items.length; k++) {
-								let obj = {};
-								if(items[k].charge_total > 0) {
-									if(items[k].invoice_item_type_name !== 'Group') {
-										if(items[k].invoiceable && items[k].invoiceable.item_id) {
-											obj.invoiceable_id = items[k].invoiceable.item_id;
-											obj.item_id = items[k].invoiceable.item_id;
-										} else {
-											obj.invoiceable_id = items[k].invoiceable_id;
-										}
-										obj.charge_total = items[k].charge_total;
-										obj.id = items[k].id;
-										obj.name = items[k].name;
-										obj.invoice_id = items[k].invoice_id;
-										obj.id = items[k].id;
-										obj.invoiceable_name = items[k].invoiceable_name + ' (' + items[k].quantity + ')';
-										obj.charge_starts_at = items[k].charge_starts_at;
-										obj.charge_ends_at = items[k].charge_ends_at;
-										obj.location = location;
-										obj.invoice_date = items[k].created_at;
-										obj.subject = subject;
-										pricesToAdd[items[k].id] = obj;										 
-									}
+							
+							for(let i=0; i<items.length;i++){
+								if(items[i].source_id){
+									opportunity_id = items[i].source_id;
+									break;
 								}
 							}
+							
+							this.attachAssetsToItems(opportunity_id, subject, location, items);
+
+						}else{
+							//console.log(invoices[p]);
 						}
 					}
+
 					this.setState({
-						prices: pricesToAdd,
 						setup: '',
 						loadingInfo: ''
 					});
+					
 				}
 			})
 			.catch((err) => {
 				console.log(err);
 			});
+	}
+
+	async attachAssetsToItems(opportunity_id, subject, location, items){
+		let res = await RequestManager.getOpportunity(opportunity_id);
+		let opportunity_items = res.data.opportunity.opportunity_items;
+		let pricesToAdd =this.state.prices;
+		for(let k=0; k < items.length; k++) {
+		
+			let obj = {};
+			if(items[k].charge_total > 0) {
+			
+				if(items[k].invoice_item_type_name !== 'Group') {
+					if(items[k].invoiceable && items[k].invoiceable.item_id) {
+						obj.invoiceable_id = items[k].invoiceable.item_id;
+						obj.item_id = items[k].invoiceable.item_id;
+					} else {
+						obj.invoiceable_id = items[k].invoiceable_id;
+					}
+					obj.charge_total = items[k].charge_total;
+					obj.id = items[k].id;
+					obj.name = items[k].name;
+					obj.invoice_id = items[k].invoice_id;
+					obj.id = items[k].id;
+					obj.invoiceable_name = items[k].invoiceable_name + ' (' + items[k].quantity + ')';
+					obj.charge_starts_at = items[k].charge_starts_at;
+					obj.charge_ends_at = items[k].charge_ends_at;
+					obj.location = location;
+					obj.invoice_date = items[k].created_at;
+					obj.subject = subject;
+					if( items[k].source_type == "Opportunity"){
+						obj.opportunity_id = items[k].source_id;
+					}
+					for (let i=0; i< opportunity_items.length; i++){
+						if(obj.invoiceable_id == opportunity_items[i].item_id && opportunity_items[i].item_assets.length > 0){
+							obj.item_assets = opportunity_items[i].item_assets[0].stock_level_asset_number;
+							break;
+						}
+					}
+
+					pricesToAdd[items[k].id] = obj;							 
+				}
+			}
+		}
+		
+		this.setState({
+			prices: pricesToAdd
+		});
 	}
 
 	async pullConsignmentInformation() {
@@ -143,30 +182,31 @@ class Landingpage extends Component {
 				try {
 					//local cache of consignments already there
 					//key: invoiceable_id, value: consignment_allocation_asset
-					if(localConsignments[this.state.prices[keys[i]].name]) {
+					let consignmentList;
+					if(localConsignments[prices[keys[i]].invoiceable_id]) {
 						console.log('used cache');
-						prices[keys[i]].consignment_allocation_asset = localConsignments[this.state.prices[keys[i]].name];
+						consignmentList = localConsignments[prices[keys[i]].invoiceable_id]
+						//prices[keys[i]].consignment_allocation_asset = localConsignments[prices[keys[i]].name];
 					} else {
-						let res = await RequestManager.getSpecificConsignments(this.state.prices[keys[i]].invoiceable_id);
-						let consignmentList = res.data.stock_levels;
+						let res = await RequestManager.getSpecificConsignments(prices[keys[i]].invoiceable_id);
+						consignmentList = res.data.stock_levels;
+						localConsignments[prices[keys[i]].invoiceable_id] = consignmentList;
+					}		
 						if(consignmentList.length > 0) {
 							for(let p=0; p<consignmentList.length; p++) {
-								if(consignmentList[p].custom_fields.consignment_allocation_asset !== null){
+								if(consignmentList[p].custom_fields.consignment_allocation_asset !== null && prices[keys[i]].item_assets == consignmentList[p].asset_number){
 									prices[keys[i]].consignment_allocation_asset = consignmentList[p].custom_fields.consignment_allocation_asset;
-									localConsignments[this.state.prices[keys[i]].name] = consignmentList[p].custom_fields.consignment_allocation_asset;
 									break;
 								}
 							}
-						} else {
-							console.log(this.state.prices[keys[i]]);
-							console.log(res.data);
-						}
+						} 
+
 						if(!prices[keys[i]].consignment_allocation_asset) {
 							prices[keys[i]].consignment_allocation_asset = [1000021];
 							localConsignments[this.state.prices[keys[i]].name] = [1000021];
 							prices[keys[i]].not_found = 'Used default value: Check to see if you have this in current-rms and has a Consignment Allocation (Asset) value.'
 						}					
-					}
+					
 				} catch (err) {
 					console.log(err);
 				}
@@ -191,7 +231,6 @@ class Landingpage extends Component {
 		let finalRevenues = {};
 		let parts = Object.keys(prices);
 		let consignmentData = this.state.consignmentData;
-
 		for(let i =0; i< parts.length; i++) {
 			let lines = [];
 			let consignment_assets = prices[parts[i]].consignment_allocation_asset;
@@ -278,7 +317,7 @@ class Landingpage extends Component {
 					split += csvs[p][k][8];
 				}
 			}
-			csvs[p].push(['', '', '', '','', '','', 'total: ' +total, 'split: ' + split, 'Habibi Total: ' + (total - split)]);
+			csvs[p].push(['', '', '', '','', '','', 'Total: ' +total.toFixed(2), 'Split: ' + split.toFixed(2), 'Habibi Total: ' + (total - split).toFixed(2)]);
 		}
 
 		this.setState({
@@ -318,7 +357,7 @@ class Landingpage extends Component {
 			year
 		};
 		this.setState({
-			prices: '',
+			prices: {},
 			finalRevenues: [],
 			consignmentObjects: [],
 			convertSuccess: '',
@@ -384,7 +423,7 @@ class Landingpage extends Component {
 						:	null
 					}
 					{
-						this.state.prices ? 
+						(Object.keys(this.state.prices).length > 0) ? 
 							<button className="btn" onClick={(e)=>this.pullConsignmentInformation()}>Get Consignment info</button>
 						:	<button className="btn" disabled={true} onClick={(e)=>this.pullConsignmentInformation()}>Get Consignment info</button>
 					}
