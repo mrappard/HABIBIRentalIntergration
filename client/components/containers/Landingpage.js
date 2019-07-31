@@ -238,7 +238,6 @@ class Landingpage extends Component {
 			if (!consignment_assets){
 				consignment_assets = [1000021];
 			}
-			console.log(consignment_assets);
 			for(let p =0; p< consignment_assets.length; p++) {
 				let tempObj;
 				for(let k=0; k<consignmentData.length; k++) {
@@ -260,12 +259,14 @@ class Landingpage extends Component {
 						smallerLine.push(prices[parts[i]].location);
 						smallerLine.push(prices[parts[i]].invoice_id);
 						smallerLine.push(parseFloat(prices[parts[i]].charge_total));
+						let yourTotal = prices[parts[i]].charge_total * data.number/100;
 						if(data.number < 1 ){
-							smallerLine.push(prices[parts[i]].charge_total * data.number);
-						}else{
-							smallerLine.push(prices[parts[i]].charge_total * data.number/100);
+							yourTotal = prices[parts[i]].charge_total * data.number;
 						}
-						smallerLine.push(prices[parts[i]].charge_total - prices[parts[i]].charge_total * data.number/100);
+						
+						smallerLine.push(yourTotal);
+						
+						smallerLine.push(prices[parts[i]].charge_total - yourTotal);
 						smallerLine.push(data.company);
 						if(prices[parts[i]].not_found)
 							smallerLine.push('WARNING: ' + prices[parts[i]].not_found);
