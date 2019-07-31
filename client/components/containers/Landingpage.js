@@ -205,7 +205,7 @@ class Landingpage extends Component {
 							prices[keys[i]].consignment_allocation_asset = [1000021];
 							localConsignments[this.state.prices[keys[i]].name] = [1000021];
 							prices[keys[i]].not_found = 'Used default value: Check to see if you have this in current-rms and has a Consignment Allocation (Asset) value.'
-						}					
+						}				
 					
 				} catch (err) {
 					console.log(err);
@@ -217,7 +217,8 @@ class Landingpage extends Component {
 				error: '',
 				generateSuccess: '',
 				setup: '',
-				consignmentInfo: ''
+				consignmentInfo: '',
+				prices : prices
 			});
 		} else {
 			this.setState({
@@ -234,6 +235,10 @@ class Landingpage extends Component {
 		for(let i =0; i< parts.length; i++) {
 			let lines = [];
 			let consignment_assets = prices[parts[i]].consignment_allocation_asset;
+			if (!consignment_assets){
+				consignment_assets = [1000021];
+			}
+			console.log(consignment_assets);
 			for(let p =0; p< consignment_assets.length; p++) {
 				let tempObj;
 				for(let k=0; k<consignmentData.length; k++) {
@@ -255,7 +260,11 @@ class Landingpage extends Component {
 						smallerLine.push(prices[parts[i]].location);
 						smallerLine.push(prices[parts[i]].invoice_id);
 						smallerLine.push(parseFloat(prices[parts[i]].charge_total));
-						smallerLine.push(prices[parts[i]].charge_total * data.number/100);
+						if(data.number < 1 ){
+							smallerLine.push(prices[parts[i]].charge_total * data.number);
+						}else{
+							smallerLine.push(prices[parts[i]].charge_total * data.number/100);
+						}
 						smallerLine.push(prices[parts[i]].charge_total - prices[parts[i]].charge_total * data.number/100);
 						smallerLine.push(data.company);
 						if(prices[parts[i]].not_found)
@@ -268,6 +277,7 @@ class Landingpage extends Component {
 						}
 						innerObj[prices[parts[i]].subject + '-' + prices[parts[i]].id] = smallerLine;
 						finalRevenues[data.company] = innerObj;
+					
 						lines.push(smallerLine);
 					}
 				}
