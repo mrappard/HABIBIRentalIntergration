@@ -96,6 +96,8 @@ class Landingpage extends Component {
 							let location = invoices[p].destination.address.city;
 							
 							for(let i=0; i<items.length;i++){
+								if(items[i].source_id == 1908){
+								}
 								if(items[i].source_id){
 									opportunity_id = items[i].source_id;
 									break;
@@ -183,15 +185,16 @@ class Landingpage extends Component {
 					//local cache of consignments already there
 					//key: invoiceable_id, value: consignment_allocation_asset
 					let consignmentList;
+					
 					if(localConsignments[prices[keys[i]].invoiceable_id]) {
-						console.log('used cache');
+						//console.log('used cache');
 						consignmentList = localConsignments[prices[keys[i]].invoiceable_id]
 						//prices[keys[i]].consignment_allocation_asset = localConsignments[prices[keys[i]].name];
 					} else {
 						let res = await RequestManager.getSpecificConsignments(prices[keys[i]].invoiceable_id);
 						consignmentList = res.data.stock_levels;
 						localConsignments[prices[keys[i]].invoiceable_id] = consignmentList;
-					}		
+					}	
 						if(consignmentList.length > 0) {
 							for(let p=0; p<consignmentList.length; p++) {
 								if(consignmentList[p].custom_fields.consignment_allocation_asset !== null && prices[keys[i]].item_assets == consignmentList[p].asset_number){
