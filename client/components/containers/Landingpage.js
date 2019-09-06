@@ -94,7 +94,6 @@ class Landingpage extends Component {
 							
 							let subject = invoices[p].subject;
 							let location = invoices[p].destination.address.city;
-							
 							for(let i=0; i<items.length;i++){
 								if(items[i].source_id == 1908){
 								}
@@ -150,6 +149,8 @@ class Landingpage extends Component {
 					obj.location = location;
 					obj.invoice_date = items[k].created_at;
 					obj.subject = subject;
+
+					
 					if( items[k].source_type == "Opportunity"){
 						obj.opportunity_id = items[k].source_id;
 					}
@@ -159,7 +160,10 @@ class Landingpage extends Component {
 							break;
 						}
 					}
-
+					if(obj.name.includes('Atlas Orion'))
+					{
+						console.log(obj);
+					}
 					pricesToAdd[items[k].id] = obj;							 
 				}
 			}
@@ -193,6 +197,10 @@ class Landingpage extends Component {
 					} else {
 						let res = await RequestManager.getSpecificConsignments(prices[keys[i]].invoiceable_id);
 						consignmentList = res.data.stock_levels;
+						if(prices[keys[i]].invoiceable_id == 569){
+							console.log(consignmentList);
+						}
+
 						localConsignments[prices[keys[i]].invoiceable_id] = consignmentList;
 					}	
 						if(consignmentList.length > 0) {
@@ -203,6 +211,9 @@ class Landingpage extends Component {
 								}
 							}
 						} 
+						if(prices[keys[i]].invoiceable_id == 569){
+							console.log(prices[keys[i]].consignment_allocation_asset);
+						}
 
 						if(!prices[keys[i]].consignment_allocation_asset) {
 							prices[keys[i]].consignment_allocation_asset = [1000021];
