@@ -41,6 +41,7 @@ class Landingpage extends Component {
 					consignmentData: res.data.list_name.list_values,
 					setup: 'Pulled information from database'
 				})
+
 			})
 			.catch((err) => {
 				console.log(err);
@@ -95,18 +96,15 @@ class Landingpage extends Component {
 							let subject = invoices[p].subject;
 							let location = invoices[p].destination.address.city;
 							for(let i=0; i<items.length;i++){
-								if(items[i].source_id == 1908){
-								}
+							
 								if(items[i].source_id){
 									opportunity_id = items[i].source_id;
 									break;
 								}
 							}
-							
 							this.attachAssetsToItems(opportunity_id, subject, location, items);
 
 						}else{
-							//console.log(invoices[p]);
 						}
 					}
 
@@ -160,10 +158,6 @@ class Landingpage extends Component {
 							break;
 						}
 					}
-					if(obj.name.includes('Atlas Orion'))
-					{
-						console.log(obj);
-					}
 					pricesToAdd[items[k].id] = obj;							 
 				}
 			}
@@ -197,24 +191,18 @@ class Landingpage extends Component {
 					} else {
 						let res = await RequestManager.getSpecificConsignments(prices[keys[i]].invoiceable_id);
 						consignmentList = res.data.stock_levels;
-						if(prices[keys[i]].invoiceable_id == 569){
-							console.log(consignmentList);
-						}
-
+						
 						localConsignments[prices[keys[i]].invoiceable_id] = consignmentList;
 					}	
 						if(consignmentList.length > 0) {
 							for(let p=0; p<consignmentList.length; p++) {
 								if(consignmentList[p].custom_fields.consignment_allocation_asset !== null && prices[keys[i]].item_assets == consignmentList[p].asset_number){
 									prices[keys[i]].consignment_allocation_asset = consignmentList[p].custom_fields.consignment_allocation_asset;
+									
 									break;
 								}
 							}
 						} 
-						if(prices[keys[i]].invoiceable_id == 569){
-							console.log(prices[keys[i]].consignment_allocation_asset);
-						}
-
 						if(!prices[keys[i]].consignment_allocation_asset) {
 							prices[keys[i]].consignment_allocation_asset = [1000021];
 							localConsignments[this.state.prices[keys[i]].name] = [1000021];
@@ -255,9 +243,11 @@ class Landingpage extends Component {
 			for(let p =0; p< consignment_assets.length; p++) {
 				let tempObj;
 				for(let k=0; k<consignmentData.length; k++) {
+					
 					if(consignmentData[k].id === consignment_assets[p]) {
 						let data = this.stringNumSplit(consignmentData[k].name);
 						//format should be: id, companyName, percentage
+
 						let smallerLine = [];
 						//if its a purchase, the part will not have charge_starts_at value filled in
 						//invoice, invoiceDate, production, location, invoiceId, total, split
@@ -273,6 +263,7 @@ class Landingpage extends Component {
 						smallerLine.push(prices[parts[i]].location);
 						smallerLine.push(prices[parts[i]].invoice_id);
 						smallerLine.push(parseFloat(prices[parts[i]].charge_total));
+
 						let yourTotal = prices[parts[i]].charge_total * data.number/100;
 						if(data.number < 1 ){
 							yourTotal = prices[parts[i]].charge_total * data.number;
