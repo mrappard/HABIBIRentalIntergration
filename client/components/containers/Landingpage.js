@@ -87,6 +87,7 @@ class Landingpage extends Component {
 				else {
 
 					let opportunity_id = 0;
+					let pricesToAdd = {...this.state.prices};
 
 					for(let p = 0; p < invoices.length; p++) {
 						//to make sure this does not include voided status
@@ -96,19 +97,24 @@ class Landingpage extends Component {
 							let subject = invoices[p].subject;
 							let location = invoices[p].destination.address.city;
 							for(let i=0; i<items.length;i++){
-							
+								if(items[i].source_id == 1908){
+								}
 								if(items[i].source_id){
 									opportunity_id = items[i].source_id;
 									break;
 								}
 							}
-							this.attachAssetsToItems(opportunity_id, subject, location, items);
+							
+							this.attachAssetsToItems(opportunity_id, subject, location, items, pricesToAdd);
 
 						}else{
 						}
 					}
 
+
+
 					this.setState({
+						prices: pricesToAdd,
 						setup: '',
 						loadingInfo: ''
 					});
@@ -120,10 +126,9 @@ class Landingpage extends Component {
 			});
 	}
 
-	async attachAssetsToItems(opportunity_id, subject, location, items){
+	async attachAssetsToItems(opportunity_id, subject, location, items, pricesToAdd){
 		let res = await RequestManager.getOpportunity(opportunity_id);
 		let opportunity_items = res.data.opportunity.opportunity_items;
-		let pricesToAdd =this.state.prices;
 		for(let k=0; k < items.length; k++) {
 		
 			let obj = {};
@@ -162,10 +167,6 @@ class Landingpage extends Component {
 				}
 			}
 		}
-		
-		this.setState({
-			prices: pricesToAdd
-		});
 	}
 
 	async pullConsignmentInformation() {
